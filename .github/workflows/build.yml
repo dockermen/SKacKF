@@ -23,9 +23,9 @@ jobs:
       with:
         python_ver: '3.13'
         requirements: './requirements.txt'
-        spec: './db_manager.py'
+        spec: './db_manager.spec'
         upload_exe_with_name: 'My executable'
-        options: --onefile,--hidden-import=datebase, --name "My App", --windowed
+        options: --onefile,--name "My App", --windowed
 
     
     - name: Print
