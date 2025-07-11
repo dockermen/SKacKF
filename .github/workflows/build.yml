@@ -12,7 +12,34 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest, macos-latest, windows-latest
+    runs-on: windows-latest
+ 
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Create Executable
+      uses: sayyid5416/pyinstaller@v1
+      with:
+        python_ver: '3.13'
+        requirements: './requirements.txt'
+        spec: './db_manager.spec'
+        upload_exe_with_name: 'My executable'
+        options: --name "My App"
+
+    
+    - name: Print
+      run: |
+        ls dist
+
+    - name: Upload a file to GitHub Artifacts
+      uses: actions/upload-artifact@main
+      with:
+        name: my-artifact
+        path: ./dist
+
+    build2:
+    runs-on: ubuntu-latest
  
     steps:
     - name: Checkout code
