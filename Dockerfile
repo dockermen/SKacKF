@@ -21,7 +21,7 @@ RUN apt-get update && \
 COPY . /app
 
 # Install PyInstaller and your application's Python dependencies
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r /app/requirements.txt
 
 # Build the PyInstaller executable
 # --onefile creates a single executable
