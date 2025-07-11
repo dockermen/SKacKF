@@ -25,7 +25,7 @@ jobs:
       - name: Upload artifact (Linux AMD64)
         uses: actions/upload-artifact@v4
         with:
-          name: your_script-linux-amd64
+          name: dbmanager-linux-amd64
           path: dist/dbmanager-linux-amd64
 
   build-linux-arm64:
@@ -81,8 +81,9 @@ jobs:
           name: dbmanager-windows
           path: dist/dbmanager-windows.exe
 
-  # --- macOS Build ---
-  build-macos:
+  # ... (previous jobs) ...
+
+  build-macos-arm64:
     runs-on: macos-latest # GitHub's macOS runner
     steps:
       - name: Checkout repository
@@ -90,17 +91,41 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.13' # Or your desired Python version
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install pyinstaller -r requirements.txt
       - name: Build PyInstaller executable (macOS)
-        run: ppyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
+        # Corrected line: 'pyinstaller' instead of 'ppyinstaller'
+        run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
       - name: Rename executable
-        run: mv dist/dbmanager dist/dbmanager-macos # macOS executables don't have .exe
+        # Adjust as per your actual output path if different
+        run: mv dist/dbmanager dist/dbmanager-macos
       - name: Upload artifact (macOS)
         uses: actions/upload-artifact@v4
         with:
           name: dbmanager-macos
+          path: dist/dbmanager-macos-arm64
+
+  build-macos-Intel:
+    runs-on: macos-13 # GitHub's macOS runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' # Or your desired Python version
+      - name: Install dependencies
+        run: pip install pyinstaller -r requirements.txt
+      - name: Build PyInstaller executable (macOS)
+        # Corrected line: 'pyinstaller' instead of 'ppyinstaller'
+        run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
+      - name: Rename executable
+        # Adjust as per your actual output path if different
+        run: mv dist/dbmanager dist/dbmanager-macos
+      - name: Upload artifact (macOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbmanager-macos-Intel
           path: dist/dbmanager-macos
-          # For macOS, you might also want to bundle into a .app or .dmg
-          # This would require additional steps and tools like 'py2app' or manual scripting.
+
