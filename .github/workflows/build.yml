@@ -1,0 +1,26 @@
+name: Upload File to GitHub Artifacts
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  REPO_NAME: "augweb"
+  REF_NAME: "v3"
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+ 
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+ 
+    - name: Upload a file to GitHub Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: my-artifact
+        path: ./pyproject.toml
