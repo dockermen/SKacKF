@@ -1,12 +1,9 @@
 name: Multi-Platform PyInstaller Build
 
 on:
-  workflow_dispatch:
-    inputs:
-      name:
-        description: 'Person to greet'
-        required: true
-        default: 'World'
+  push:
+    branches:
+      - master
 
 jobs:
   # --- Linux Builds ---
