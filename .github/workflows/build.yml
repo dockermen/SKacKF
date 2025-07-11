@@ -25,6 +25,8 @@ jobs:
         requirements: './requirements.txt'
         spec: './db_manager.spec'
         upload_exe_with_name: 'My executable'
+        options: --onefile, --name "My App", --windowed
+
     
     - name: Print
       run: |
