@@ -1,56 +1,104 @@
-name: Upload File to GitHub Artifacts
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-  workflow_dispatch: # Allows manual trigger
+name: Multi-Platform PyInstaller Build
 
-env:
-  REPO_NAME: "augweb"
-  REF_NAME: "v3"
+on:
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  # --- Linux Builds ---
+  build-linux-amd64:
+    runs-on: ubuntu-latest # GitHub's default Ubuntu runner is amd64
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' # Choose your Python version
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Build PyInstaller executable (Linux AMD64)
+        run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
+      - name: Rename executable
+        run: mv dist/dbmanager dist/dbmanager-linux-amd64
+      - name: Upload artifact (Linux AMD64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: your_script-linux-amd64
+          path: dist/dbmanager-linux-amd64
 
-    - name: Set up Docker BuildX (Optional, but good practice for caching)
-      uses: docker/setup-buildx-action@v3
+  build-linux-arm64:
+    runs-on: ubuntu-latest # You'll need an ARM64 runner or use QEMU/Docker buildx
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      # Option 1: Use an ARM64 runner if available (e.g., self-hosted or specific GitHub runner)
+      # Option 2: Use Docker Buildx with emulation (more complex, see below)
+      # For simplicity, if using GitHub-hosted runners, you might use 'ubuntu-latest' and rely on Docker buildx
+      # Or if self-hosted, specify an 'arm64' label.
+      # For now, let's assume `runs-on: ubuntu-latest` and we'll use Docker buildx below.
+      - name: Set up QEMU (for ARM64 emulation on AMD64 runner)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker image
-      id: docker_build
-      uses: docker/build-push-action@v5
-      with:
-        context: . # Build context is the current directory
-        push: false # Don't push to a registry, just build locally on the runner
-        tags: pyinstaller-builder:latest # Tag for the image
-        load: true # Load the image into Docker daemon after building
+      - name: Build Docker image for Linux ARM64
+        run: |
+          docker buildx build --platform linux/arm64/v8 -t pyinstaller-arm64-builder -f Dockerfile.arm64 . --load
+      - name: Run container and retrieve executable (Linux ARM64)
+        run: |
+          CONTAINER_ID=$(docker create pyinstaller-arm64-builder)
+          docker cp $CONTAINER_ID:/app/dist/dbmanager ./dbmanager-linux-arm64
+          docker rm $CONTAINER_ID
+      - name: Upload artifact (Linux ARM64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbmanager-linux-arm64
+          path: dbmanager-linux-arm64
 
-    - name: Run container and retrieve executable
-      # This step starts a container from the built image and copies the executable out.
-      # We give the container a name for easier reference.
-      run: |
-        CONTAINER_ID=$(docker create pyinstaller-builder:latest)
-        docker cp $CONTAINER_ID:/app/dist/dbmanager ./dbmanager
-        docker rm $CONTAINER_ID # Clean up the temporary container
+  # --- Windows Build ---
+  build-windows:
+    runs-on: windows-latest # GitHub's Windows runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Build PyInstaller executable (Windows)
+        run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
+      - name: Rename executable
+        run: Move-Item dist/dbmanager.exe dist/dbmanager-windows.exe # PowerShell syntax
+      - name: Upload artifact (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbmanager-windows
+          path: dist/dbmanager-windows.exe
 
-    - name: Verify executable (Optional)
-      run: |
-        ls -l ./dbmanager
-        file ./dbmanager # Show executable type and dependencies
-        # You could even try to run it on the runner if the runner's GLIBC is compatible
-        # ./dbmanager
-
-    - name: Upload PyInstaller executable as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: pyinstaller-executable
-        path: ./dbmanager # Path to the executable on the runner
-    
-    - name: Print
-      run: |
-        ls dist
+  # --- macOS Build ---
+  build-macos:
+    runs-on: macos-latest # GitHub's macOS runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Build PyInstaller executable (macOS)
+        run: ppyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
+      - name: Rename executable
+        run: mv dist/dbmanager dist/dbmanager-macos # macOS executables don't have .exe
+      - name: Upload artifact (macOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbmanager-macos
+          path: dist/dbmanager-macos
+          # For macOS, you might also want to bundle into a .app or .dmg
+          # This would require additional steps and tools like 'py2app' or manual scripting.
