@@ -10,8 +10,10 @@ WORKDIR /app
 # patchelf might be useful for some PyInstaller scenarios, though not always needed
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    python3 \
+    python3.13 \
     python3-pip \
+    python3-dev \
+    python-dev \
     build-essential \
     upx-ucl \
     && \
