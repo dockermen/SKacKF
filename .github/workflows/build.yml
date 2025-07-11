@@ -44,12 +44,13 @@ jobs:
         upload_exe_with_name: 'My executable'
     
     - name: Print
-        run: |
-          ls
-          echo $(basename "$(pwd)")
-          echo $GITHUB_EVENT_PATH
-          EVENT_DATA=$(cat $GITHUB_EVENT_PATH)
-          echo $EVENT_DATA | jq .
+      run: |
+        ls
+        echo $(basename "$(pwd)")
+        echo $GITHUB_EVENT_PATH
+        EVENT_DATA=$(cat $GITHUB_EVENT_PATH)
+        echo $EVENT_DATA | jq .
+        
     - name: Upload a file to GitHub Artifacts
       uses: actions/upload-artifact@main
       with:
