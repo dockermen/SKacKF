@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
  
     steps:
     - name: Checkout code
@@ -25,7 +25,7 @@ jobs:
         requirements: './requirements.txt'
         spec: './db_manager.spec'
         upload_exe_with_name: 'My executable'
-        options: --onefile,--name "My App", --windowed
+        options: --onefile,--name "My App"
 
     
     - name: Print
