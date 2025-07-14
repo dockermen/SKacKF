@@ -56,8 +56,8 @@ def check_device_endtime():
     for row in rows:
         try:
             id,email, augmentSession,status,expire_time,other = row
-            # if id == 7:
-            #     continue
+            if id != 29:
+                continue
             #print(id,email, augmentSession,status,expire_time,other)
             accessToken = json.loads(augmentSession).get("accessToken")
             url = json.loads(augmentSession).get("tenantURL")+"subscription-info"
@@ -69,11 +69,13 @@ def check_device_endtime():
                 "x-api-version": "2",
                 "Authorization":f"Bearer {accessToken}"
             }
-            res = s.post(url,headers=header,json={}).json()
-            if "InactiveSubscription" in res.get('subscription', {}):
+            res = s.post(url,headers=header,json={})
+
+            if "InactiveSubscription" in res.text or "Invalid token" in res.text:
                 print(f"id: {id} 邮箱: {email} 账号已失效")
                 update_user_device(email, 0)
                 continue
+            res = res.json()
             activesubscription = res.get("subscription").get("ActiveSubscription","")
             usage_balance_depleted = activesubscription.get("usage_balance_depleted",False)
             end_date = activesubscription.get("end_date","")
