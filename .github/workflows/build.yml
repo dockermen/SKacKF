@@ -147,12 +147,12 @@ jobs:
         run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
       - name: Rename executable
         # Adjust as per your actual output path if different
-        run: mv dist/dbmanager dist/dbmanager-macos
+        run: mv dist/dbmanager dist/dbmanager-macos-arm64
       - name: Upload artifact (macOS)
         uses: actions/upload-artifact@v4
         with:
           name: dbmanager-macos-arm64
-          path: dist/dbmanager-macos
+          path: dist/dbmanager-macos-arm64
 
   build-macos-Intel:
     runs-on: macos-13 # GitHub's macOS runner
@@ -170,12 +170,12 @@ jobs:
         run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
       - name: Rename executable
         # Adjust as per your actual output path if different
-        run: mv dist/dbmanager dist/dbmanager-macos
+        run: mv dist/dbmanager dist/dbmanager-macos-Intel
       - name: Upload artifact (macOS)
         uses: actions/upload-artifact@v4
         with:
           name: dbmanager-macos-Intel
-          path: dist/dbmanager-macos
+          path: dist/dbmanager-macos-Intel
 
   # 在所有其他 jobs 后面添加
   create-release:
