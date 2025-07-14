@@ -2,8 +2,9 @@ import argparse
 import sqlite3
 from datetime import datetime
 from datebase import *
-
-
+import uuid
+import json
+import requests
 def list_all_users():
     """List all users from user_info table"""
     conn = sqlite3.connect(DB_PATH)
@@ -41,6 +42,57 @@ def list_all_devices():
     print("-" * 70)
     for row in rows:
         print(f"{row[0]:<5} {row[1]:<30} {'Active' if row[2] else 'Inactive':<8} {row[3]}")
+
+
+def check_device_endtime():
+    """Update all devices Session Endtime from user_device table"""
+    s = requests.session()
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM user_device')
+    rows = cursor.fetchall()
+
+    for row in rows:
+        try:
+            id,email, augmentSession,status,expire_time,other = row
+            # if id == 7:
+            #     continue
+            #print(id,email, augmentSession,status,expire_time,other)
+            accessToken = json.loads(augmentSession).get("accessToken")
+            url = json.loads(augmentSession).get("tenantURL")+"subscription-info"
+            header = {
+                "Content-Type": "application/json",
+                "User-Agent": "Augment.vscode-augment/0.482.1 (win32; x64; 10.0.19045) vscode/1.95.3",
+                "x-request-id": str(uuid.uuid4()),
+                "x-request-session-id": str(uuid.uuid4()),
+                "x-api-version": "2",
+                "Authorization":f"Bearer {accessToken}"
+            }
+            res = s.post(url,headers=header,json={}).json()
+            if "InactiveSubscription" in res.get('subscription', {}):
+                print(f"id: {id} 邮箱: {email} 账号已失效")
+                update_user_device(email, 0)
+                continue
+            activesubscription = res.get("subscription").get("ActiveSubscription","")
+            usage_balance_depleted = activesubscription.get("usage_balance_depleted",False)
+            end_date = activesubscription.get("end_date","")
+            if usage_balance_depleted:
+                print(f"id: {id} 邮箱: {email} 余额不足")
+            else:
+                print(f"id: {id} 邮箱: {email} 到期时间: {end_date} 状态：{not usage_balance_depleted}")
+                cursor.execute('''
+                    UPDATE user_device
+                    SET expire_time = ?
+                        WHERE email = ?
+                    ''', (end_date,email))
+                conn.commit()
+        except Exception as e:
+            print(f"Error Update all devices Session Endtime from device: {str(e)}")
+
+    
+    conn.close()
+
 
 def add_user(args):
     """Add a new user"""
@@ -93,6 +145,9 @@ def main():
     list_parser = subparsers.add_parser('list', help='List records')
     list_parser.add_argument('type', choices=['users', 'devices'], help='Type of records to list')
 
+    check_device_parser = subparsers.add_parser('check', help='Check device')
+    check_device_parser.add_argument("device", help='Type of records to list')
+
     # Add user command
     add_user_parser = subparsers.add_parser('add-user', help='Add a new user')
     add_user_parser.add_argument('username', help='Username')
@@ -127,6 +182,8 @@ def main():
             list_all_users()
         else:
             list_all_devices()
+    elif args.command == 'check':
+        check_device_endtime()
     elif args.command == 'add-user':
         add_user(args)
     elif args.command == 'add-device':
