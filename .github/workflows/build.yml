@@ -4,6 +4,21 @@ on:
   push:
     tags:
       - 'v*'  # 触发标签格式为 v1.0.0 这样的版本号
+  workflow_dispatch:    # 添加手动触发
+    inputs:            # 可选的输入参数
+      release_tag:     # 添加一个标签输入
+        description: '发布版本标签 (例如: v1.0.0)'
+        required: true
+        type: string
+      is_prerelease:   # 是否为预发布版本
+        description: '是否为预发布版本'
+        required: false
+        type: boolean
+        default: false
+
+# 添加全局权限配置
+permissions:
+  contents: write  # 这给予了创建 release 所需的权限
 
 jobs:
   # --- Linux Builds ---
@@ -166,17 +181,28 @@ jobs:
   create-release:
     needs: [build-linux-amd64, build-linux-amd64-debian, build-linux-arm64, build-windows, build-macos-arm64, build-macos-Intel]
     runs-on: ubuntu-latest
-    # 只在推送标签时运行
-    if: startsWith(github.ref, 'refs/tags/')
+    # 修改条件判断，支持手动触发
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           
+      # 如果是手动触发，创建标签
+      - name: Create Tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git tag ${{ github.event.inputs.release_tag }}
+          git push origin ${{ github.event.inputs.release_tag }}
+          
       - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v1
         with:
+          # 根据触发方式选择标签
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.ref_name }}
           files: |
             artifacts/dbmanager-linux-amd64/*
             artifacts/dbmanager-linux-amd64-debian/*
@@ -185,6 +211,6 @@ jobs:
             artifacts/dbmanager-macos-arm64/*
             artifacts/dbmanager-macos-Intel/*
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event.inputs.is_prerelease }}
           generate_release_notes: true
 
