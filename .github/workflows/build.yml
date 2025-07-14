@@ -28,6 +28,28 @@ jobs:
           name: dbmanager-linux-amd64
           path: dist/dbmanager-linux-amd64
 
+  build-linux-amd64-debian:
+    runs-on: ubuntu-latest # GitHub's default Ubuntu runner is amd64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' # Choose your Python version
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Build PyInstaller executable (Linux AMD64 Debian)
+        run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
+      - name: Rename executable
+        run: mv dist/dbmanager dist/dbmanager-linux-amd64-debian
+      - name: Upload artifact (Linux AMD64 Debian)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbmanager-linux-amd64-debian
+          path: dist/dbmanager-linux-amd64-debian
+
+          
   build-linux-arm64:
     runs-on: ubuntu-latest # You'll need an ARM64 runner or use QEMU/Docker buildx
     steps:

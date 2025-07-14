@@ -2,3 +2,4 @@ build
 dist
 .venv
 user_devices.db
+*.exe
