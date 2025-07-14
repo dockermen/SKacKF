@@ -28,7 +28,7 @@ def list_all_devices():
     """List all devices from user_device table"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('SELECT id, email, status, expire_time FROM user_device')
+    cursor.execute('SELECT id, email, status, expire_time, augmentSession FROM user_device')
     rows = cursor.fetchall()
     conn.close()
     
@@ -41,7 +41,8 @@ def list_all_devices():
     print(f"{'ID':<5} {'Email':<30} {'Status':<8} {'Expire Time'}")
     print("-" * 70)
     for row in rows:
-        print(f"{row[0]:<5} {row[1]:<30} {'Active' if row[2] else 'Inactive':<8} {row[3]}")
+        augsession = json.loads(row[4])
+        print(f"{row[0]:<5} {row[1]:<30} {'Active' if row[2] else 'Inactive':<8} {row[3]} Token: {augsession.get('accessToken')} Url: {augsession.get('tenantURL')}")
 
 
 def check_device_endtime():
@@ -56,8 +57,8 @@ def check_device_endtime():
     for row in rows:
         try:
             id,email, augmentSession,status,expire_time,other = row
-            if id != 29:
-                continue
+            # if id != 29:
+            #     continue
             #print(id,email, augmentSession,status,expire_time,other)
             accessToken = json.loads(augmentSession).get("accessToken")
             url = json.loads(augmentSession).get("tenantURL")+"subscription-info"

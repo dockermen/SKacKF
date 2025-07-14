@@ -43,7 +43,6 @@ def create_db(db_path=DB_PATH):
     conn.close()
 
 def insert_user_device(email,augmentSession,expire_time="",other="",db_path=DB_PATH):
-    #闁告瑱鎷烽弫銈囨嫻閿曗偓瑜拌法鎮伴敓锟�
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
@@ -64,8 +63,7 @@ def query_user_devices(db_path=DB_PATH,id=None):
     conn.close()
     return rows
 
-def query_user_device(idnum:str=3,db_path=DB_PATH,):
-    #濞寸姴绐搒er_device閻炴稏鍔嬮懙鎴︽⒕韫囨梹绨氶柤鎯у槻瑜板檮dnum濞戞搫鎷锋径鍕�矗閿燂拷
+def query_user_device(idnum:int=3,db_path=DB_PATH,):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM user_device WHERE status = 1 ORDER BY RANDOM() LIMIT ?', (idnum,))
