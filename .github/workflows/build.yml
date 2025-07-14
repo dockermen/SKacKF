@@ -28,28 +28,39 @@ jobs:
           name: dbmanager-linux-amd64
           path: dist/dbmanager-linux-amd64
 
+
   build-linux-amd64-debian:
-    runs-on: ubuntu-latest # GitHub's default Ubuntu runner is amd64
+    runs-on: ubuntu-latest # You'll need an ARM64 runner or use QEMU/Docker buildx
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      # Option 1: Use an ARM64 runner if available (e.g., self-hosted or specific GitHub runner)
+      # Option 2: Use Docker Buildx with emulation (more complex, see below)
+      # For simplicity, if using GitHub-hosted runners, you might use 'ubuntu-latest' and rely on Docker buildx
+      # Or if self-hosted, specify an 'arm64' label.
+      # For now, let's assume `runs-on: ubuntu-latest` and we'll use Docker buildx below.
+      - name: Set up QEMU ( Linux AMD64 Debian runner)
+        uses: docker/setup-qemu-action@v3
         with:
-          python-version: '3.13' # Choose your Python version
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Build PyInstaller executable (Linux AMD64 Debian)
-        run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
-      - name: Rename executable
-        run: mv dist/dbmanager dist/dbmanager-linux-amd64-debian
+          platforms: all
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image for Linux AMD64 Debian
+        run: |
+          docker buildx build --platform linux/amd64 -t pyinstaller-amd64-builder -f Dockerfile.debian . --load
+      - name: Run container and retrieve executable (Linux AMD64 Debian)
+        run: |
+          CONTAINER_ID=$(docker create pyinstaller-amd64-builder)
+          docker cp $CONTAINER_ID:/app/dist/dbmanager ./dbmanager-linux-amd64-debian
+          docker rm $CONTAINER_ID
       - name: Upload artifact (Linux AMD64 Debian)
         uses: actions/upload-artifact@v4
         with:
           name: dbmanager-linux-amd64-debian
-          path: dist/dbmanager-linux-amd64-debian
+          path: dbmanager-linux-amd64-debian
 
-          
+
   build-linux-arm64:
     runs-on: ubuntu-latest # You'll need an ARM64 runner or use QEMU/Docker buildx
     steps:
