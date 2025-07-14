@@ -132,7 +132,7 @@ jobs:
   # ... (previous jobs) ...
 
   build-macos-arm64:
-    runs-on: macos-14# GitHub's macOS runner
+    runs-on: macos-15 # GitHub's macOS runner
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
