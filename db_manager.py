@@ -114,6 +114,14 @@ def add_user(args):
     except Exception as e:
         print(f"Error adding user: {str(e)}")
 
+def update_user_remain(args):
+    """disable user remain num"""
+    try:
+        update_user_remain_num(args.username, args.remain_num)
+        print(f"Successfully disable user : {args.username}")
+    except Exception as e:
+        print(f"Error disable user : {str(e)}")
+
 def add_device(args):
     """Add a new device"""
     try:
@@ -151,6 +159,9 @@ def main():
     check_device_parser = subparsers.add_parser('check', help='Check device')
     check_device_parser.add_argument("device", help='Type of records to list')
 
+    update_user_parser = subparsers.add_parser('update-user', help='Update user')
+    update_user_parser.add_argument('username', help='Username')
+    update_user_parser.add_argument('--remain-num', type=int, default=0, required=True, help='Remaining number')
     # Add user command
     add_user_parser = subparsers.add_parser('add-user', help='Add a new user')
     add_user_parser.add_argument('username', help='Username')
@@ -187,6 +198,8 @@ def main():
             list_all_devices()
     elif args.command == 'check':
         check_device_endtime()
+    elif args.command == 'update-user':
+        update_user_remain(args)
     elif args.command == 'add-user':
         add_user(args)
     elif args.command == 'add-device':

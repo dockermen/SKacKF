@@ -3,3 +3,5 @@ dist
 .venv
 user_devices.db
 *.exe
+.vscode/
+.specstory/
