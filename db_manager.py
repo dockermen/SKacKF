@@ -159,9 +159,7 @@ def main():
     check_device_parser = subparsers.add_parser('check', help='Check device')
     check_device_parser.add_argument("device", help='Type of records to list')
 
-    update_user_parser = subparsers.add_parser('update-user', help='Update user')
-    update_user_parser.add_argument('username', help='Username')
-    update_user_parser.add_argument('--remain-num', type=int, default=0, required=True, help='Remaining number')
+
     # Add user command
     add_user_parser = subparsers.add_parser('add-user', help='Add a new user')
     add_user_parser.add_argument('username', help='Username')
@@ -177,6 +175,9 @@ def main():
     add_device_parser.add_argument('--expire-time', help='Expiration time')
     add_device_parser.add_argument('--other', help='Additional information')
 
+    update_user_parser = subparsers.add_parser('update-user', help='Update user')
+    update_user_parser.add_argument('username', help='Username')
+    update_user_parser.add_argument('--remain-num', type=int, default=0, help='Remaining number')
     # Update device command
     update_device_parser = subparsers.add_parser('update-device', help='Update device information')
     update_device_parser.add_argument('email', help='Email address')
