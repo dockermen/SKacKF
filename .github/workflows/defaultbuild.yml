@@ -2,8 +2,8 @@ name: Default Build
 
 on:
   push:
-    tags:
-      - 'v1.0.*'   # 匹配以日期命名的分支
+    branches:
+      - '1.0.0'   # 匹配以日期命名的分支
 
 # 添加全局权限配置
 permissions:
@@ -86,53 +86,6 @@ jobs:
           name: dbmanager-windows
           path: dist/dbmanager-windows.exe
 
-  # ... (previous jobs) ...
-
-  build-macos-arm64:
-    runs-on: macos-14 # GitHub's macOS runner
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13' # Or your desired Python version
-      - name: Install dependencies
-        run: pip install pyinstaller -r requirements.txt
-      - name: Build PyInstaller executable (macOS)
-        # Corrected line: 'pyinstaller' instead of 'ppyinstaller'
-        run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
-      - name: Rename executable
-        # Adjust as per your actual output path if different
-        run: mv dist/dbmanager dist/dbmanager-macos-arm64
-      - name: Upload artifact (macOS)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dbmanager-macos-arm64
-          path: dist/dbmanager-macos-arm64
-
-  build-macos-Intel:
-    runs-on: macos-13 # GitHub's macOS runner
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13' # Or your desired Python version
-      - name: Install dependencies
-        run: pip install pyinstaller -r requirements.txt
-      - name: Build PyInstaller executable (macOS)
-        # Corrected line: 'pyinstaller' instead of 'ppyinstaller'
-        run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
-      - name: Rename executable
-        # Adjust as per your actual output path if different
-        run: mv dist/dbmanager dist/dbmanager-macos-Intel
-      - name: Upload artifact (macOS)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dbmanager-macos-Intel
-          path: dist/dbmanager-macos-Intel
 
   # 在所有其他 jobs 后面添加
   create-release:
@@ -161,8 +114,8 @@ jobs:
       - name: Create Tag
         if: github.event_name == 'workflow_dispatch'
         run: |
-          git tag ${{ github.event.inputs.release_tag }}
-          git push origin ${{ github.event.inputs.release_tag }}
+          git tag ${{ github.ref_name }}
+          git push origin ${{ github.ref_name }}
           
       - name: Create Release
         env:
@@ -174,8 +127,6 @@ jobs:
             artifacts/dbmanager-linux-amd64/*
             artifacts/dbmanager-linux-amd64-debian/*
             artifacts/dbmanager-windows/*
-            artifacts/dbmanager-macos-arm64/*
-            artifacts/dbmanager-macos-Intel/*
           draft: false
           prerelease: ${{ github.event.inputs.is_prerelease }}
           generate_release_notes: true
