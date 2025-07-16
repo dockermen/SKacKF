@@ -89,7 +89,7 @@ jobs:
 
   # 在所有其他 jobs 后面添加
   create-release:
-    needs: [build-linux-amd64, build-linux-amd64-debian, build-windows, build-macos-arm64, build-macos-Intel]
+    needs: [build-linux-amd64, build-linux-amd64-debian, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/heads/20')
     steps:
