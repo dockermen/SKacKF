@@ -52,7 +52,7 @@ def check_device_endtime():
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM user_device')
+    cursor.execute('SELECT * FROM user_device where status = 1')
     rows = cursor.fetchall()
     
     def _is_expire_time_more_than_one_day(expire_time_str):
@@ -131,7 +131,6 @@ def check_device_endtime():
                 conn.commit()
         except Exception as e:
             print(f"Error Update all devices Session Endtime from device: {str(e)}")
-        time.sleep(1)
 
     
     conn.close()
