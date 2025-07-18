@@ -1,90 +1,119 @@
-name: Default Build
+name: Default Build  # 默认构建工作流的名称
 
 on:
   push:
     branches:
-      - '1.0.0'   # 匹配以日期命名的分支
+      - '1.0.0'   # 触发条件：当代码被推送到 1.0.0 分支时自动执行此工作流
 
-# 添加全局权限配置
+# GitHub Actions 的权限配置
 permissions:
-  contents: write  # 这给予了创建 release 所需的权限
+  contents: write  # 授予工作流写入仓库内容的权限，这对于创建 releases 和上传构建产物是必需的
 
-jobs:
+jobs:  # 定义工作流中的所有任务
 
-
+  # ===== Linux AMD64 Debian 构建任务 =====
   build-linux-amd64-debian:
-    runs-on: ubuntu-latest # You'll need an ARM64 runner or use QEMU/Docker buildx
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      # Option 1: Use an ARM64 runner if available (e.g., self-hosted or specific GitHub runner)
-      # Option 2: Use Docker Buildx with emulation (more complex, see below)
-      # For simplicity, if using GitHub-hosted runners, you might use 'ubuntu-latest' and rely on Docker buildx
-      # Or if self-hosted, specify an 'arm64' label.
-      # For now, let's assume `runs-on: ubuntu-latest` and we'll use Docker buildx below.
+    runs-on: ubuntu-latest # 在 GitHub 提供的最新版 Ubuntu 运行器上执行
+    steps:  # 定义任务的具体步骤
+      - name: Checkout repository  # 步骤1：检出代码
+        uses: actions/checkout@v4  # 使用官方的检出动作，v4 是最新稳定版
+      
+      # 配置 QEMU 用于跨平台构建支持
       - name: Set up QEMU ( Linux AMD64 Debian runner)
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v3  # 设置 QEMU 模拟器
         with:
-          platforms: all
+          platforms: all  # 启用所有平台的模拟支持，使得可以构建不同架构的镜像
+      
+      # 配置 Docker Buildx
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3  # 设置 Docker Buildx，这是 Docker 的一个构建引擎插件
 
+      # 构建 Docker 镜像
       - name: Build Docker image for Linux AMD64 Debian
         run: |
+          # --platform 指定目标平台为 linux/amd64
+          # -t 设置镜像标签名
+          # -f 指定 Dockerfile 路径
+          # --load 将镜像加载到 Docker 守护进程中
           docker buildx build --platform linux/amd64 -t pyinstaller-amd64-builder -f Dockerfile.debian . --load
+      
+      # 从容器中提取构建好的可执行文件
       - name: Run container and retrieve executable (Linux AMD64 Debian)
         run: |
+          # 创建一个新容器并获取其 ID
           CONTAINER_ID=$(docker create pyinstaller-amd64-builder)
+          # 从容器中复制构建好的可执行文件到主机
           docker cp $CONTAINER_ID:/app/dist/dbmanager ./dbmanager-linux-amd64-debian
+          # 删除不再需要的容器
           docker rm $CONTAINER_ID
+      
+      # 上传 Linux 构建产物
       - name: Upload artifact (Linux AMD64 Debian)
         uses: actions/upload-artifact@v4
         with:
-          name: dbmanager-linux-amd64-debian
-          path: dbmanager-linux-amd64-debian
+          name: dbmanager-linux-amd64-debian  # 构建产物的名称
+          path: dbmanager-linux-amd64-debian  # 要上传的文件路径
 
-  # --- Windows Build ---
+  # ===== Windows 构建任务 =====
   build-windows:
-    runs-on: windows-latest # GitHub's Windows runner
+    runs-on: windows-latest  # 在 GitHub 提供的最新版 Windows 运行器上执行
     steps:
-      - name: Checkout repository
+      - name: Checkout repository  # 检出代码
         uses: actions/checkout@v4
+      
+      # 配置 Python 环境
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.13'  # 指定使用 Python 3.13 版本
+      
+      # 安装项目依赖
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt  # 从 requirements.txt 安装所需的 Python 包
+      
+      # 使用 PyInstaller 构建可执行文件
       - name: Build PyInstaller executable (Windows)
         run: pyinstaller --onefile --name=dbmanager --clean --noconfirm --hidden-import=datebase db_manager.py
+        # --onefile: 将所有依赖打包成单个可执行文件
+        # --name: 指定输出文件名
+        # --clean: 清理临时文件
+        # --noconfirm: 不询问覆盖确认
+        # --hidden-import: 指定额外的导入模块
+      
+      # 重命名构建产物
       - name: Rename executable
-        run: Move-Item dist/dbmanager.exe dist/dbmanager-windows.exe # PowerShell syntax
+        run: Move-Item dist/dbmanager.exe dist/dbmanager-windows.exe  # 使用 PowerShell 命令重命名
+      
+      # 上传 Windows 构建产物
       - name: Upload artifact (Windows)
         uses: actions/upload-artifact@v4
         with:
-          name: dbmanager-windows
-          path: dist/dbmanager-windows.exe
+          name: dbmanager-windows  # 构建产物的名称
+          path: dist/dbmanager-windows.exe  # 要上传的文件路径
 
-
-  # 在所有其他 jobs 后面添加
+  # ===== 创建 GitHub Release =====
   create-release:
+    # 指定此任务依赖于前面的两个构建任务完成后才能执行
     needs: [build-linux-amd64-debian, build-windows]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # 在 Ubuntu 环境中执行发布任务
     steps:
+      # 下载之前任务中的所有构建产物
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: artifacts  # 下载到 artifacts 目录
+      
+      # 创建 GitHub Release
       - name: Create Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: softprops/action-gh-release@v1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub 自动提供的认证令牌
+        uses: softprops/action-gh-release@v1  # 使用社区提供的发布动作
         with:
-          tag_name: v${{ github.ref_name }}
-          files: |
+          tag_name: v1.0.1 #${{ github.ref_name }}  # 使用分支名作为版本标签，例如 v1.0.0
+          files: |  # 指定要上传到 release 的文件
             artifacts/dbmanager-linux-amd64-debian/*
             artifacts/dbmanager-windows/*
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          draft: false  # 创建正式版本而不是草稿
+          prerelease: false  # 不标记为预发布版本
+          generate_release_notes: true  # 自动生成发布说明，包含提交记录等信息
 

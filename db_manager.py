@@ -1,6 +1,7 @@
 import argparse
 import sqlite3
 from datetime import datetime
+import time
 from datebase import *
 import uuid
 import json
@@ -53,6 +54,40 @@ def check_device_endtime():
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM user_device')
     rows = cursor.fetchall()
+    
+    def _is_expire_time_more_than_one_day(expire_time_str):
+        from datetime import datetime, timedelta, timezone
+        import re
+        """
+        判断expire_time（UTC）和当前上海时间（UTC+8）相差是否满1天（24小时）。
+        :param expire_time_str: 过期时间字符串，格式如 '2025-07-20T05:08:44Z' 或 '2025-08-01T06:21:57.857044098Z'
+        :return: 满1天返回True，否则False
+        """
+        # 只取到秒，去掉小数点后内容
+        match = re.match(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})", expire_time_str)
+        if match:
+            expire_time_str = match.group(1) + "Z"
+
+        # 解析为UTC时间
+        try:
+            expire_time = datetime.strptime(expire_time_str, "%Y-%m-%dT%H:%M:%SZ")
+            expire_time = expire_time.replace(tzinfo=timezone.utc)
+        except Exception as e:
+            print(f"时间格式错误: {expire_time_str}")
+            return False
+
+        # 获取当前上海时间
+        shanghai_tz = timezone(timedelta(hours=8))
+        now_shanghai = datetime.now(shanghai_tz)
+
+        # 计算 expire_time（UTC）和 now_shanghai（UTC+8）之间的时间差
+        # 先把 now_shanghai 转为 UTC
+        now_utc = now_shanghai.astimezone(timezone.utc)
+        delta = expire_time - now_utc
+
+        # 判断是否大于等于1天
+        return delta >= timedelta(days=1)
+
 
     for row in rows:
         try:
@@ -71,17 +106,21 @@ def check_device_endtime():
                 "Authorization":f"Bearer {accessToken}"
             }
             res = s.post(url,headers=header,json={})
-
             if "InactiveSubscription" in res.text or "Invalid token" in res.text:
                 print(f"id: {id} 邮箱: {email} 账号已失效")
-                update_user_device(email, 0)
+                update_user_device(email, 0,expire_time=expire_time,other=other)
                 continue
             res = res.json()
             activesubscription = res.get("subscription").get("ActiveSubscription","")
             usage_balance_depleted = activesubscription.get("usage_balance_depleted",False)
             end_date = activesubscription.get("end_date","")
+            if end_date and not _is_expire_time_more_than_one_day(end_date):
+                print(f"id: {id} 邮箱: {email} 到期时间: {end_date} 不足一天，执行禁用")
+                update_user_device(email, 0,expire_time=expire_time,other=other)
+                continue
             if usage_balance_depleted:
                 print(f"id: {id} 邮箱: {email} 余额不足")
+                update_user_device(email, 0,expire_time=expire_time,other=other)
             else:
                 print(f"id: {id} 邮箱: {email} 到期时间: {end_date} 状态：{not usage_balance_depleted}")
                 cursor.execute('''
@@ -92,6 +131,7 @@ def check_device_endtime():
                 conn.commit()
         except Exception as e:
             print(f"Error Update all devices Session Endtime from device: {str(e)}")
+        time.sleep(1)
 
     
     conn.close()
