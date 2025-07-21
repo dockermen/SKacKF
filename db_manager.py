@@ -187,6 +187,33 @@ def delete_device(args):
     except Exception as e:
         print(f"Error deleting device: {str(e)}")
 
+def get_device_statistics():
+    """Get statistics about devices including active count, expired count, etc."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # 获取总设备数
+    cursor.execute('SELECT COUNT(*) FROM user_device')
+    total_count = cursor.fetchone()[0]
+    
+    # 获取活跃设备数
+    cursor.execute('SELECT COUNT(*) FROM user_device WHERE status = 1')
+    active_count = cursor.fetchone()[0]
+    
+    # 获取过期设备数
+    cursor.execute('SELECT COUNT(*) FROM user_device WHERE status = 0')
+    expired_count = cursor.fetchone()[0]
+    
+    conn.close()
+    
+    print("\nDevice Statistics:")
+    print("-" * 40)
+    print(f"设备总数: {total_count}")
+    print(f"活跃设备数: {active_count}")
+    print(f"过期设备数: {expired_count}")
+    print("-" * 40)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Database Management CLI')
     subparsers = parser.add_subparsers(dest='command', help='Commands')
@@ -198,6 +225,8 @@ def main():
     check_device_parser = subparsers.add_parser('check', help='Check device')
     check_device_parser.add_argument("device", help='Type of records to list')
 
+    # 添加新的 stats 命令
+    stats_parser = subparsers.add_parser('stats', help='Show device statistics')
 
     # Add user command
     add_user_parser = subparsers.add_parser('add-user', help='Add a new user')
@@ -236,6 +265,8 @@ def main():
             list_all_users()
         else:
             list_all_devices()
+    elif args.command == 'stats':  # 添加新的命令处理
+        get_device_statistics()
     elif args.command == 'check':
         check_device_endtime()
     elif args.command == 'update-user':
