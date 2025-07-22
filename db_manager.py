@@ -1,11 +1,13 @@
 import argparse
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import time
 from datebase import *
 import uuid
 import json
 import requests
+
+
 def list_all_users():
     """List all users from user_info table"""
     conn = sqlite3.connect(DB_PATH)
@@ -49,7 +51,7 @@ def list_all_devices():
 def check_device_endtime():
     """Update all devices Session Endtime from user_device table"""
     s = requests.session()
-
+    
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM user_device where status = 1')
@@ -88,6 +90,39 @@ def check_device_endtime():
         # 判断是否大于等于1天
         return delta >= timedelta(days=1)
 
+    def _check_user_status1(url,accessToken):
+        now = datetime.now().replace(microsecond=500000) - timedelta(hours=8)
+
+
+        url = url+"record-session-events"
+        header = {
+                "Content-Type": "application/json",
+                "User-Agent": "Augment.vscode-augment/0.482.1 (win32; x64; 10.0.19045) vscode/1.95.3",
+                "x-request-id": str(uuid.uuid4()),
+                "x-request-session-id": str(uuid.uuid4()),
+                "x-api-version": "2",
+                "Authorization":f"Bearer {accessToken}"
+            }
+        body = {
+                "client_name": "vscode-extension",
+                "events": [
+                    {
+                        "time": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-4] + "Z",
+                        "event": {
+                            "onboarding_session_event": {
+                                "event_time_sec": int(time.time()),
+                                "event_time_nsec": 500000000,
+                                "event_name": "used-chat",
+                                "user_agent": "Augment.vscode-augment/0.487.1 (win32; x64; 10.0.19045) vscode/1.95.3"
+                            }
+                        }
+                    }
+                ]
+            }
+        res = s.post(url,headers=header,json=body)
+        if "suspended" in res.text:
+            return False,f"id: {id} 邮箱: {email} 账号已暂停 {res.text}"
+        return True,True
 
     for row in rows:
         try:
@@ -96,7 +131,8 @@ def check_device_endtime():
             #     continue
             #print(id,email, augmentSession,status,expire_time,other)
             accessToken = json.loads(augmentSession).get("accessToken")
-            url = json.loads(augmentSession).get("tenantURL")+"subscription-info"
+            path_url = json.loads(augmentSession).get("tenantURL")
+            url = path_url+"subscription-info"
             header = {
                 "Content-Type": "application/json",
                 "User-Agent": "Augment.vscode-augment/0.482.1 (win32; x64; 10.0.19045) vscode/1.95.3",
@@ -108,6 +144,11 @@ def check_device_endtime():
             res = s.post(url,headers=header,json={})
             if "InactiveSubscription" in res.text or "Invalid token" in res.text:
                 print(f"id: {id} 邮箱: {email} 账号已失效")
+                update_user_device(email, 0,expire_time=expire_time,other=other)
+                continue
+            status,msg = _check_user_status1(path_url,accessToken)
+            if not status:
+                print(msg)
                 update_user_device(email, 0,expire_time=expire_time,other=other)
                 continue
             res = res.json()
