@@ -5,3 +5,4 @@ user_devices.db
 *.exe
 .vscode/
 .specstory/
+test.py
