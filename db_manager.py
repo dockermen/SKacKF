@@ -119,7 +119,7 @@ def check_device_endtime():
                     }
                 ]
             }
-        res = s.post(url,headers=header,json=body)
+        res = s.post(url,headers=header,json=body,timeout=10)
         if "suspended" in res.text:
             return False,f"id: {id} 邮箱: {email} 账号已暂停 {res.text}"
         return True,True
