@@ -133,6 +133,12 @@ def check_device_endtime():
             accessToken = json.loads(augmentSession).get("accessToken")
             path_url = json.loads(augmentSession).get("tenantURL")
             url = path_url+"subscription-info"
+            status,msg = _check_user_status1(path_url,accessToken)
+            if not status:
+                print(msg)
+                update_user_device(email, 0,expire_time=expire_time,other=other)
+                continue
+
             header = {
                 "Content-Type": "application/json",
                 "User-Agent": "Augment.vscode-augment/0.482.1 (win32; x64; 10.0.19045) vscode/1.95.3",
@@ -141,14 +147,9 @@ def check_device_endtime():
                 "x-api-version": "2",
                 "Authorization":f"Bearer {accessToken}"
             }
-            res = s.post(url,headers=header,json={})
+            res = s.post(url,headers=header,json={},timeout=10)
             if "InactiveSubscription" in res.text or "Invalid token" in res.text:
                 print(f"id: {id} 邮箱: {email} 账号已失效")
-                update_user_device(email, 0,expire_time=expire_time,other=other)
-                continue
-            status,msg = _check_user_status1(path_url,accessToken)
-            if not status:
-                print(msg)
                 update_user_device(email, 0,expire_time=expire_time,other=other)
                 continue
             res = res.json()
