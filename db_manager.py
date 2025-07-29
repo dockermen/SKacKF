@@ -133,11 +133,11 @@ def check_device_endtime():
             accessToken = json.loads(augmentSession).get("accessToken")
             path_url = json.loads(augmentSession).get("tenantURL")
             url = path_url+"subscription-info"
-            status,msg = _check_user_status1(path_url,accessToken)
-            if not status:
-                print(msg)
-                update_user_device(email, 0,expire_time=expire_time,other=other)
-                continue
+            # status,msg = _check_user_status1(path_url,accessToken)
+            # if not status:
+            #     print(msg)
+            #     update_user_device(email, 0,expire_time=expire_time,other=other)
+            #     continue
 
             header = {
                 "Content-Type": "application/json",

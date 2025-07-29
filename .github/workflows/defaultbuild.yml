@@ -3,7 +3,7 @@ name: Default Build  # 默认构建工作流的名称
 on:
   push:
     branches:
-      - '1.0.0'   # 触发条件：当代码被推送到 1.0.0 分支时自动执行此工作流
+      - '1.0.1'   # 触发条件：当代码被推送到 1.0.1 分支时自动执行此工作流
 
 # GitHub Actions 的权限配置
 permissions:
@@ -109,7 +109,7 @@ jobs:  # 定义工作流中的所有任务
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub 自动提供的认证令牌
         uses: softprops/action-gh-release@v1  # 使用社区提供的发布动作
         with:
-          tag_name: v1.0.2 #${{ github.ref_name }}  # 使用分支名作为版本标签，例如 v1.0.0
+          tag_name: v1.0.3 #${{ github.ref_name }}  # 使用分支名作为版本标签，例如 v1.0.0
           files: |  # 指定要上传到 release 的文件
             artifacts/dbmanager-linux-amd64-debian/*
             artifacts/dbmanager-windows/*
