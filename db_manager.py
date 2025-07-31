@@ -97,7 +97,7 @@ def check_device_endtime():
         url = url+"record-session-events"
         header = {
                 "Content-Type": "application/json",
-                "User-Agent": "Augment.vscode-augment/0.482.1 (win32; x64; 10.0.19045) vscode/1.95.3",
+                "User-Agent": "Augment.vscode-augment/0.487.1 (win32; x64; 10.0.19045) vscode/1.95.3",
                 "x-request-id": str(uuid.uuid4()),
                 "x-request-session-id": str(uuid.uuid4()),
                 "x-api-version": "2",
@@ -133,15 +133,15 @@ def check_device_endtime():
             accessToken = json.loads(augmentSession).get("accessToken")
             path_url = json.loads(augmentSession).get("tenantURL")
             url = path_url+"subscription-info"
-            # status,msg = _check_user_status1(path_url,accessToken)
-            # if not status:
-            #     print(msg)
-            #     update_user_device(email, 0,expire_time=expire_time,other=other)
-            #     continue
+            status,msg = _check_user_status1(path_url,accessToken)
+            if not status:
+                print(msg)
+                update_user_device(email, 0,expire_time=expire_time,other=other)
+                continue
 
             header = {
                 "Content-Type": "application/json",
-                "User-Agent": "Augment.vscode-augment/0.482.1 (win32; x64; 10.0.19045) vscode/1.95.3",
+                "User-Agent": "Augment.vscode-augment/0.487.1 (win32; x64; 10.0.19045) vscode/1.95.3",
                 "x-request-id": str(uuid.uuid4()),
                 "x-request-session-id": str(uuid.uuid4()),
                 "x-api-version": "2",
