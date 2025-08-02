@@ -156,10 +156,10 @@ def check_device_endtime():
             activesubscription = res.get("subscription").get("ActiveSubscription","")
             usage_balance_depleted = activesubscription.get("usage_balance_depleted",False)
             end_date = activesubscription.get("end_date","")
-            if end_date and not _is_expire_time_more_than_one_day(end_date):
-                print(f"id: {id} 邮箱: {email} 到期时间: {end_date} 不足一天，执行禁用")
-                update_user_device(email, 0,expire_time=expire_time,other=other)
-                continue
+            # if end_date and not _is_expire_time_more_than_one_day(end_date):
+            #     print(f"id: {id} 邮箱: {email} 到期时间: {end_date} 不足一天，执行禁用")
+            #     update_user_device(email, 0,expire_time=expire_time,other=other)
+            #     continue
             if usage_balance_depleted:
                 print(f"id: {id} 邮箱: {email} 余额不足")
                 update_user_device(email, 0,expire_time=expire_time,other=other)
